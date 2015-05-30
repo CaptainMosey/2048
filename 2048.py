@@ -29,12 +29,14 @@ class GameState(object):
 
                 #print first,second
         
-                self.currentState[first/4,first%4]=2
-                self.currentState[second/4,second%4]=2
+                #self.currentState[first/4,first%4]=2
+                #self.currentState[second/4,second%4]=2
 
 
-                #self.currentState[1,1]=2
-                #self.currentState[3,1]=2
+                self.currentState[0,1]=2
+                self.currentState[0,0]=2
+                self.currentState[0,2]=2
+                self.currentState[0,3]=2
 
                                 
                 self.score=0
@@ -54,21 +56,31 @@ class GameState(object):
                 if direction == "W":
 
                         for counter in range(3):#do everythig 3 times 
+
                                 for x in range(0,4):#
                                                               
                                         for y in range(0,3):
-                                                if newArray[x,y]!=0:#then check to add
-                                                        if newArray[x,y+1]== newArray[x,y]:
-                                                                newArray[x,y]=2*newArray[x,y+1]
+                                                #print x,y, ([x,y] in alreadyChangedList)
+                                                #print alreadyChangedList
+                                        
+                                                if newArray[x,y]!=0:
+                                                        if([x,y] not in alreadyChangedList):#then check to add
+                                                                if newArray[x,y+1]== newArray[x,y]:
+                                                                        newArray[x,y]=2*newArray[x,y+1]
+                                                                        newArray[x,y+1]=0
+                                                                        score+=newArray[x,y]
+                                                                        nothingChanged=False
+                                                                        alreadyChangedList.append([x,y])
+                                                                        #print newArray
+                                                                
+                                                        
+                        
+ 
+                                                for y in range(0,3):
+                                                        if newArray[x,y]==0:
+                                                                newArray[x,y]=newArray[x,y+1]
                                                                 newArray[x,y+1]=0
-                                                                score+=newArray[x,y]
-                                                                nothingChanged=False
-
-                                        for y in range(0,3):
-                                                if newArray[x,y]==0:
-                                                        newArray[x,y]=newArray[x,y+1]
-                                                        newArray[x,y+1]=0
-                                                        if newArray[x,y]!=0:nothingChanged=False
+                                                                if newArray[x,y]!=0:nothingChanged=False
                 elif direction == "E":
 
                         for counter in range(3):#do everythig 3 times 
@@ -76,12 +88,15 @@ class GameState(object):
                                                               
                                         for y in range(3,0,-1):
                                                 if newArray[x,y]!=0:#then check to add
-                                                        if newArray[x,y-1]== newArray[x,y]:
-                                                                newArray[x,y]=2*newArray[x,y-1]
-                                                                newArray[x,y-1]=0
-                                                                score+=newArray[x,y]
-                                                                nothingChanged=False
+                                                        if([x,y] not in alreadyChangedList):
+                                                                if newArray[x,y-1]== newArray[x,y]:
 
+                                                                        newArray[x,y]=2*newArray[x,y-1]
+                                                                        newArray[x,y-1]=0
+                                                                        score+=newArray[x,y]
+                                                                        nothingChanged=False
+                                                                        alreadyChangedList.append([x,y])
+                                                                        
                                         for y in range(3,0,-1):
                                                 if newArray[x,y]==0:
                                                         newArray[x,y]=newArray[x,y-1]
@@ -96,12 +111,15 @@ class GameState(object):
                                                               
                                         for y in range(0,3):
                                                 if newArray[y,x]!=0:#then check to add
-                                                        if newArray[y+1,x]== newArray[y,x]:
-                                                                newArray[y,x]=2*newArray[y+1,x]
-                                                                newArray[y+1,x]=0
-                                                                score+=newArray[y,x]
-                                                                nothingChanged=False
-
+                                                        if([x,y] not in alreadyChangedList):
+                                                                if newArray[y+1,x]== newArray[y,x]:
+                                                                
+                                                                        newArray[y,x]=2*newArray[y+1,x]
+                                                                        newArray[y+1,x]=0
+                                                                        score+=newArray[y,x]
+                                                                        nothingChanged=False
+                                                                        alreadyChangedList.append([x,y])
+                                                                        
                                         for y in range(0,3):
                                                 if newArray[y,x]==0:
                                                         newArray[y,x]=newArray[y+1,x]
@@ -115,12 +133,15 @@ class GameState(object):
                                                               
                                         for y in range(3,0,-1):
                                                 if newArray[y,x]!=0:#then check to add
-                                                        if newArray[y-1,x]== newArray[y,x]:
-                                                                newArray[y,x]=2*newArray[y-1,x]
-                                                                newArray[y-1,x]=0
-                                                                score+=newArray[y,x]
-                                                                nothingChanged=False
-
+                                                        if([x,y] not in alreadyChangedList):
+                                                                if newArray[y-1,x]== newArray[y,x]:
+                                                                
+                                                                        newArray[y,x]=2*newArray[y-1,x]
+                                                                        newArray[y-1,x]=0
+                                                                        score+=newArray[y,x]
+                                                                        nothingChanged=False
+                                                                        alreadyChangedList.append([x,y])
+                                                                        
                                         for y in range(3,0,-1):
                                                 if newArray[y,x]==0:
                                                         newArray[y,x]=newArray[y-1,x]
