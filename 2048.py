@@ -267,7 +267,7 @@ def value(board,score=0,levels=0):
         spaces=numOpenSpaces(board)
         ans=w1*(score)+w2*isHighestTileOnEdge(board)+w3*spaces+w4*twoAndFourNearOpen(board)
         
-        if spaces>8:levels=0#just trying this out
+        if spaces>5:levels=0#just trying this out
 
         
         if levels==0:return ans
