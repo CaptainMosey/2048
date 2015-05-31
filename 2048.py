@@ -67,7 +67,7 @@ class GameState(object):
                                                                 if newArray[x,y+1]== newArray[x,y]:
                                                                         newArray[x,y]=2*newArray[x,y+1]
                                                                         newArray[x,y+1]=0
-                                                                        score+=2*newArray[x,y]
+                                                                        score+=newArray[x,y]
                                                                         nothingChanged=False
                                                                         alreadyChangedList.append([x,y])
 
@@ -99,7 +99,7 @@ class GameState(object):
 
                                                                         newArray[x,y]=2*newArray[x,y-1]
                                                                         newArray[x,y-1]=0
-                                                                        score+=2*newArray[x,y]
+                                                                        score+=newArray[x,y]
                                                                         nothingChanged=False
                                                                         alreadyChangedList.append([x,y])
 
@@ -128,7 +128,7 @@ class GameState(object):
                                                                 
                                                                         newArray[y,x]=2*newArray[y+1,x]
                                                                         newArray[y+1,x]=0
-                                                                        score+=2*newArray[y,x]
+                                                                        score+=newArray[y,x]
                                                                         nothingChanged=False
                                                                         alreadyChangedList.append([y,x])
                                                                         
@@ -155,7 +155,7 @@ class GameState(object):
                                                                 
                                                                         newArray[y,x]=2*newArray[y-1,x]
                                                                         newArray[y-1,x]=0
-                                                                        score+=2*newArray[y,x]
+                                                                        score+=newArray[y,x]
                                                                         nothingChanged=False
                                                                         alreadyChangedList.append([y,x])
                                                                         
@@ -218,16 +218,32 @@ class GameState(object):
         
 def checkForLegalMoves(board):
                 
-                
+                spaces=0
                 ans=False
                 if numOpenSpaces(board):
                         return True
                 for x in ("N","S","E","W"):
                         a=checkMove(board,x)
                         if not statesAreTheSame(a[1],board):
-                                ans=True
+                                return True
                 return ans
+        
+def checkForLegalMovesAndSpaces(board):
                 
+                
+                ans=False
+                spaces=0
+                for x in range(16):
+                        if board[x/4,x%4]==0:
+                                spaces+=1
+                
+                if spaces:
+                        return True,spaces
+                for x in ("N","S","E","W"):
+                        a=checkMove(board,x)
+                        if not statesAreTheSame(a[1],board):
+                                return True,spaces
+                return ans,spaces
 
 
           
@@ -252,25 +268,33 @@ def value(board,score=0,levels=0):
 
         try:
 
-        S=w1(points)+w2(high on edge)+w3(num open spaces) +w4(2 and 4 near open)
+        S=w1(points)+w2(high on edge)+w3(num open spaces) +w4(2 and 4 near open)+w5(is the game over)
 
 
         '''
         #to start
         w1=1
-        w2=10
+        w2=0
         w3=5
-        w4=10
+        w4=20
+        w5=-20 
+        w6=30
         Q=0
 
         likelihood2=0.9
-        spaces=numOpenSpaces(board)
-        ans=w1*(score)+w2*isHighestTileOnEdge(board)+w3*spaces+w4*twoAndFourNearOpen(board)
-        
-        if spaces>5:levels=0#just trying this out
+        a=checkForLegalMovesAndSpaces(board)
+        spaces=a[1]
+        over=not a[0]
+        #ans=w1*(score)+w2*isHighestTileOnEdge(board)+w3*spaces+w4*twoAndFourNearOpen(board)+w5*over
+        #ans=w1*(score)+w3*spaces+w4*twoAndFourNearOpen(board)+w5*over
+        ans=w1*(score)+w3*spaces+w4*twoAndFourNearOpen(board)+w5*over+w6*areHighestTilesOnEdge(board)
 
-        
-        if levels==0:return ans
+        #just trying this out -  cant imagine when the board is empty we need to do 3 level search of (2new tile possibilitiesx15locationx4 moves)^3 = 1.7 million options)
+        # here i wait until it is 2x10x4, whichis still 500,000 options
+        #if spaces>5:levels-=1        
+
+         
+        if levels<=0:return ans
         
         #for levels>0, need expectimax
 
@@ -332,6 +356,45 @@ def isHighestTileOnEdge(board):
         
 
         return ans
+
+def areHighestTilesOnEdge(board,tiles=2):
+        #search for highest tile, save index
+        highest=np.zeros((tiles+1))
+        index=[(1,1)]*(tiles+1)
+        #print index
+        ans=0
+
+        for x in range(16):
+                for y in range(tiles-1,-1,-1):
+                        if board[x/4,x%4]>highest[y]:#if better, lowert the old one in rank
+                                highest[y+1]=highest[y]
+                                index[y+1]=index[y]
+                                highest[y] = board[x/4,x%4]
+                                index[y]=(x/4,x%4)
+
+
+
+
+
+
+        #evaluate
+        for y in range(tiles):
+                #print "\n",highest[y],index[y]
+                if index[y][0]==0:
+                        ans+=1
+                if index[y][0]==3:
+                        ans+=1
+                if index[y][1]==0:
+                        ans+=1
+                if index[y][1]==3:
+                        ans+=1
+                
+                
+        
+
+        return (float(ans)/float(tiles))
+
+
 
 def numOpenSpaces(board):
         counter=0
@@ -523,7 +586,7 @@ def expectimax(board,levels=1):
         
 
 def run(numTrials=1,showGames=False,levels=1):
-        print time.ctime()
+        start= time.time()
         averageScore=0
         topScore=0
         lowScore=1000000
@@ -545,9 +608,10 @@ def run(numTrials=1,showGames=False,levels=1):
                                 print "No MOve?"
                                 print a.currentState
                                 print "Expectimax chose",k[0],"at valuye",k[1]
-                print a.show()
-                print time.ctime()
-                print "Your score was ",a.score,"highest tile was",findHighestTile(a.currentState)[0]
+                #print a.show()
+                end= time.time()
+                print x,a.score,findHighestTile(a.currentState)[0],end-start
+                start=end
                 averageScore+=a.score/numTrials
                 if a.score>topScore:topScore=a.score
                 if a.score<lowScore:lowScore=a.score
@@ -556,8 +620,24 @@ def run(numTrials=1,showGames=False,levels=1):
                 
 
 
-        
-        
+def manual():
+
+                a=GameState()
+
+                while checkForLegalMoves(a.currentState):
+
+                        
+                        print a.show()
+                        print"Score = ",a.score
+                        q=raw_input("")
+                        if a.move(q):
+  
+                                a.addNumber()
+                        #print "tile score:",areHighestTilesOnEdge(a.currentState)
+                        
+                print "Your score was ",a.score,"highest tile was",findHighestTile(a.currentState)[0]
+
+#manual()   
 #run()
 
 
