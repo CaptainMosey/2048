@@ -258,7 +258,7 @@ def statesAreTheSame(board1,board2):
                 if board1[x/4][x%4]!=board2[x/4][x%4]:ans=False
         return ans
                 
-def value(board,score=0,levels=0):
+def value(board,score=0,levels=0,w1=1,w2=0,w3=5,w4=20,w5=-20,w6=30,w7=2):
         '''decide on value for state
         possible heruisitics:
             points for last move
@@ -273,12 +273,13 @@ def value(board,score=0,levels=0):
 
         '''
         #to start
-        w1=1
-        w2=0
-        w3=5
-        w4=20
-        w5=-20 
-        w6=30
+        #1=1
+        #w2=0
+        #w3=5
+        #w4=20
+        #w5=-20 
+        #w6=30
+        #w7=2. number of tiles 
         Q=0
 
         likelihood2=0.9
@@ -287,10 +288,10 @@ def value(board,score=0,levels=0):
         over=not a[0]
         #ans=w1*(score)+w2*isHighestTileOnEdge(board)+w3*spaces+w4*twoAndFourNearOpen(board)+w5*over
         #ans=w1*(score)+w3*spaces+w4*twoAndFourNearOpen(board)+w5*over
-        ans=w1*(score)+w3*spaces+w4*twoAndFourNearOpen(board)+w5*over+w6*areHighestTilesOnEdge(board)
+        ans=w1*(score)+w3*spaces+w4*twoAndFourNearOpen(board)+w5*over+w6*areHighestTilesOnEdge(board,w7)
 
         #just trying this out -  cant imagine when the board is empty we need to do 3 level search of (2new tile possibilitiesx15locationx4 moves)^3 = 1.7 million options)
-        # here i wait until it is 2x10x4, whichis still 500,000 options
+        # here i wait until it is 2x5x4, whichis still 500,000 options
         #if spaces>5:levels-=1        
 
          
@@ -313,7 +314,7 @@ def value(board,score=0,levels=0):
                 temp[x[0],x[1]]=4
                 Q+=((1-likelihood2)*expectimax(temp,levels-1)[1])/len(zeroList)
                 temp[x[0],x[1]]=0
-        ans=(ans+Q)/2
+        ans=(ans+Q)
         
         
         
@@ -392,7 +393,9 @@ def areHighestTilesOnEdge(board,tiles=2):
                 
         
 
-        return (float(ans)/float(tiles))
+        if tiles:
+                return (float(ans)/float(tiles))
+        else:return 0
 
 
 
@@ -565,37 +568,42 @@ def checkMove(board,direction):# direction = [-1,0],[1,0],[0,-1],[0,1]
                                                                 
      
 
-def expectimax(board,levels=1):
+def expectimax(board,levels=1,w1=1,w2=0,w3=5,w4=20,w5=-20,w6=30,w7=2):
         #checks board through x levels, returns bext move,value
         #value is value of next move plus sum of probabilities*values for next moves
 
         bestMove=""
-        bestValue=-1
+        bestValue=-10000000
         
         moves=("N","S","E","W")
         for x in moves:
                 temp= checkMove(board,x)
                 if temp[0]:
-                        if value(temp[1],temp[2],levels)>bestValue:
+                        if value(temp[1],temp[2],levels,w1,w2,w3,w4,w5,w6,w7)>bestValue:
                                 bestMove=x
                                 bestValue=value(temp[1],temp[2])
-                                
+        if bestValue==-1:
+                print board,"\n",temp
+                k=raw_input("")
         return bestMove,bestValue
                         
         
         
 
-def run(numTrials=1,showGames=False,levels=1):
+def run(numTrials=1,showGames=False,levels=1,w1=1,w2=0,w3=5,w4=20,w5=-20,w6=30,w7=2):
         start= time.time()
         averageScore=0
         topScore=0
         lowScore=1000000
 
+
+
         for x in range(numTrials):
                 a=GameState()
 
                 while checkForLegalMoves(a.currentState):
-                        k=expectimax(a.currentState,levels)
+                        #k=expectimax(a.currentState,levels)
+                        k=expectimax(a.currentState,levels,w1,w3,w4,w5,w6,w7)
                         if showGames:
                                 print a.show()
                                 print"Score = ",a.score
@@ -617,8 +625,72 @@ def run(numTrials=1,showGames=False,levels=1):
                 if a.score<lowScore:lowScore=a.score
         print "Average Score=",averageScore," in ",numTrials," trials"
         print "Top Score was",topScore,". Low Score was",lowScore
-                
 
+
+                
+def runTest(numTrials=1,showGames=False,levels=1):
+        start= time.time()
+        averageScore=0
+        topScore=0
+        lowScore=1000000
+        duration=0
+        filename="output"+str(int(time.time()))+".csv"
+        outputFile=open(filename,"w")
+        print(filename)
+        header=str("Number,Time,w1,w3,w4,w5,w6,w7,AvScore,HighScore,LowScore,HighestTile,numTrials = "+str(numTrials)+" levels = "+str(levels))
+        print(header)
+        
+        outputFile.write(header+"\n")
+        for f in range(1,2):#score, w1
+                for g in (0,5,10):#w3, value per space
+                        for b in range(0,1):#,20,40,60): #w4, 2and4 near open
+                                for c in range(-30,-29):#w5 game over
+                                        for d in range(30,31):#w6 higest  on edges
+                                                for e in range(0,2):#w7, number of tiles
+                                                        averageScore=0
+                                                        topScore=0
+                                                        lowScore=10000000
+                                                        highestTile=0
+                                                        for x in range(numTrials):
+                                                                a=GameState()
+
+                                                                while checkForLegalMoves(a.currentState):
+                                                                        #k=expectimax(a.currentState,levels)
+                                                                        k=expectimax(a.currentState,levels,w1=f,w3=g,w4=b,w5=c,w6=d,w7=e)
+                                                                        if showGames:
+                                                                                print a.show()
+                                                                                print"Score = ",a.score
+                                                                        #q=raw_input("best move "+k[0])
+                                                                        if a.move(k[0]):
+          
+                                                                                a.addNumber()
+        
+                                                                        else:
+                                                                                print "No MOve?"
+                                                                                print a.currentState
+                                                                                print "Expectimax chose",k[0],"at valuye",k[1]
+                                                                #print a.show()
+                                                                
+                                                                #to write
+                                                                highTile=findHighestTile(a.currentState)[0]
+                                                                print x,a.score,highTile,time.time()-start
+                                                                
+                                                                averageScore+=a.score/numTrials
+                                                                if a.score>topScore:topScore=a.score
+                                                                if a.score<lowScore:lowScore=a.score
+                                                                if highTile>highestTile:highestTile=highTile
+
+                                                                
+                                                        end= time.time()
+                                                        duration=end-start
+                                                        start=end
+                                                        writeString=str(x)+","+str(duration)+","+str(f)+","+str(g)+","+str(b)+","+str(c)+","+str(d)+","+str(e)+","+str(averageScore)+","+str(topScore)+","+str(lowScore)+","+str(highestTile)
+                                                        print writeString
+                                                        outputFile.write(writeString+"\n")
+        outputFile.close()
+                                                
+  
+                
 
 def manual():
 
